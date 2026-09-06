@@ -12,6 +12,7 @@ import { EditClothingPage } from './pages/EditClothingPage';
 import { GenerateOutfitPage } from './pages/GenerateOutfitPage';
 import { OutfitsPage } from './pages/OutfitsPage';
 import { PlannerPage } from './pages/PlannerPage';
+import { OutfitDetailPage } from './pages/OutfitDetailPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -56,6 +57,7 @@ export default function App() {
             <Route path="/wardrobe/:id/edit" element={<EditClothingPage />} />
             <Route path="/outfits" element={<OutfitsPage />} />
             <Route path="/outfits/generate" element={<GenerateOutfitPage />} />
+            <Route path="/outfits/:id" element={<OutfitDetailPage />} />
             <Route path="/planner" element={<PlannerPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />

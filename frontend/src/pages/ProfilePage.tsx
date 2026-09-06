@@ -1,7 +1,55 @@
+import { useState, useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { bodyProfileApi } from '../api/bodyProfile';
 
 export function ProfilePage() {
   const { user, logout } = useAuthStore();
+  const qc = useQueryClient();
+
+  const [privacy, setPrivacy] = useState('private');
+  const [intensity, setIntensity] = useState(35);
+
+  const [heightCm, setHeightCm] = useState('');
+  const [bustChest, setBustChest] = useState('86');
+  const [waist, setWaist] = useState('68');
+  const [hips, setHips] = useState('94');
+
+  const { data: bodyProfile } = useQuery({
+    queryKey: ['body-profile'],
+    queryFn: bodyProfileApi.getProfile,
+  });
+
+  useEffect(() => {
+    if (bodyProfile?.height_cm) {
+      setHeightCm(bodyProfile.height_cm.toString());
+    }
+  }, [bodyProfile]);
+
+  const updateProfileMutation = useMutation({
+    mutationFn: async () => {
+      const payload = { height_cm: heightCm ? parseFloat(heightCm) : null };
+      if (bodyProfile?.id) {
+        return bodyProfileApi.updateProfile(payload);
+      } else {
+        return bodyProfileApi.createProfile(payload);
+      }
+    },
+    onSuccess: (data) => {
+      qc.setQueryData(['body-profile'], data);
+      alert('Measurements updated successfully!');
+    },
+    onError: (err: any) => {
+      alert(err?.response?.data?.detail || 'Failed to update measurements');
+    }
+  });
+
+  const getIntensityText = (val: number) => {
+    if (val < 25) return 'Very Conservative';
+    if (val < 50) return 'Subtle Tweaks';
+    if (val < 75) return 'Creative Flair';
+    return 'Avant-Garde';
+  };
 
   return (
     <div className="max-w-[1024px] mx-auto space-y-12">
@@ -24,7 +72,7 @@ export function ProfilePage() {
           </div>
         </div>
         <div className="mt-4 md:mt-0 flex flex-col gap-4">
-          <button className="bg-transparent border border-outline text-primary font-button text-button px-6 py-2 rounded-lg hover:bg-surface-variant transition-colors">
+          <button disabled title="Coming Soon" className="bg-transparent border border-outline text-primary/50 cursor-not-allowed font-button text-button px-6 py-2 rounded-lg transition-colors">
             Edit Profile
           </button>
           <button onClick={logout} className="bg-error/10 text-error font-button text-button px-6 py-2 rounded-lg hover:bg-error/20 transition-colors">
@@ -50,14 +98,14 @@ export function ProfilePage() {
                 <span className="font-body-lg text-body-lg block">Private</span>
                 <span className="font-body-md text-body-md text-on-surface-variant">Only visible to you and AI Stylist.</span>
               </div>
-              <input defaultChecked className="form-radio text-primary focus:ring-primary w-5 h-5" name="privacy" type="radio" />
+              <input checked={privacy === 'private'} onChange={() => setPrivacy('private')} className="form-radio text-primary focus:ring-primary w-5 h-5" name="privacy" type="radio" />
             </label>
             <label className="flex items-center justify-between p-4 border border-outline-variant rounded-xl cursor-pointer hover:bg-surface-container-low transition-colors">
               <div>
                 <span className="font-body-lg text-body-lg block">Friends</span>
                 <span className="font-body-md text-body-md text-on-surface-variant">Share inspiration with connected friends.</span>
               </div>
-              <input className="form-radio text-primary focus:ring-primary w-5 h-5" name="privacy" type="radio" />
+              <input checked={privacy === 'friends'} onChange={() => setPrivacy('friends')} className="form-radio text-primary focus:ring-primary w-5 h-5" name="privacy" type="radio" />
             </label>
           </div>
         </section>
@@ -76,9 +124,9 @@ export function ProfilePage() {
               <span>Conservative</span>
               <span>Avant-Garde</span>
             </div>
-            <input className="w-full h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer custom-range" max="100" min="1" type="range" defaultValue="35" />
+            <input value={intensity} onChange={(e) => setIntensity(Number(e.target.value))} className="w-full h-1 bg-surface-variant rounded-lg appearance-none cursor-pointer custom-range" max="100" min="1" type="range" />
             <div className="bg-surface-container-low p-4 rounded-xl border border-outline-variant mt-6">
-              <p className="font-body-md text-body-md text-on-surface-variant italic">Current setting: <strong className="text-primary not-italic font-medium">Subtle Tweaks</strong>. The AI will suggest safe, classic pairings based on your existing habits.</p>
+              <p className="font-body-md text-body-md text-on-surface-variant italic">Current setting: <strong className="text-primary not-italic font-medium">{getIntensityText(intensity)}</strong>. The AI will adapt to this choice.</p>
             </div>
           </div>
         </section>
@@ -90,25 +138,31 @@ export function ProfilePage() {
               <span className="material-symbols-outlined">straighten</span>
               Precision Measurements
             </h3>
-            <button className="font-label-caps text-label-caps text-primary hover:text-secondary transition-colors uppercase tracking-widest">Update</button>
+            <button 
+              onClick={() => updateProfileMutation.mutate()} 
+              disabled={updateProfileMutation.isPending}
+              className="font-label-caps text-label-caps text-primary hover:text-secondary transition-colors uppercase tracking-widest disabled:opacity-50"
+            >
+              {updateProfileMutation.isPending ? 'Updating...' : 'Update'}
+            </button>
           </div>
           <p className="font-body-md text-body-md text-on-surface-variant mb-6">Accurate measurements ensure perfect fit recommendations across brands.</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors">
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1">Height (cm)</label>
-              <input className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" defaultValue="170" />
+              <input value={heightCm} onChange={(e) => setHeightCm(e.target.value)} className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" placeholder="170" />
             </div>
-            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors">
+            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors" title="Locally saved (not synced to backend)">
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1">Bust/Chest (cm)</label>
-              <input className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" defaultValue="86" />
+              <input value={bustChest} onChange={(e) => setBustChest(e.target.value)} className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" placeholder="86" />
             </div>
-            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors">
+            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors" title="Locally saved (not synced to backend)">
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1">Waist (cm)</label>
-              <input className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" defaultValue="68" />
+              <input value={waist} onChange={(e) => setWaist(e.target.value)} className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" placeholder="68" />
             </div>
-            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors">
+            <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors" title="Locally saved (not synced to backend)">
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1">Hips (cm)</label>
-              <input className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" defaultValue="94" />
+              <input value={hips} onChange={(e) => setHips(e.target.value)} className="w-full bg-transparent border-none p-0 font-body-lg text-body-lg text-primary focus:ring-0 outline-none" type="number" placeholder="94" />
             </div>
           </div>
         </section>

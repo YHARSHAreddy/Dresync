@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { plannerApi } from '../api/planner';
 import { DayOfWeek, DAYS_OF_WEEK, SEASON_OPTIONS, OCCASION_OPTIONS } from '../types';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
@@ -10,6 +11,8 @@ const DAY_LABELS: Record<DayOfWeek, string> = {
 };
 
 function OutfitMini({ outfit }: { outfit: any }) {
+  const navigate = useNavigate();
+
   if (!outfit) {
     return (
       <div className="flex flex-col items-center justify-center text-outline/30 bg-surface-container-low/50 border border-dashed border-outline-variant/30 rounded-xl" style={{ height: '160px' }}>
@@ -22,7 +25,13 @@ function OutfitMini({ outfit }: { outfit: any }) {
   const score = Math.round(outfit.compatibility_score * 100);
 
   return (
-    <div className="flex flex-col gap-3 group relative cursor-pointer h-full">
+    <div 
+      className="flex flex-col gap-3 group relative cursor-pointer h-full"
+      onClick={() => navigate(`/outfits/${outfit.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && navigate(`/outfits/${outfit.id}`)}
+    >
        <div className="w-full aspect-[4/5] rounded-xl overflow-hidden bg-surface-variant relative">
           {outfit.image_url ? (
             <img src={outfit.image_url} alt={outfit.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />

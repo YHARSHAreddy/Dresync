@@ -80,7 +80,7 @@ export function Layout() {
                 {isDark ? 'light_mode' : 'dark_mode'}
               </span>
             </button>
-            <button className="text-primary hover:opacity-80 transition-opacity duration-300 scale-95 duration-200 ease-out">
+            <button disabled title="Notifications (Coming Soon)" className="text-primary/50 cursor-not-allowed scale-95 transition-opacity duration-300">
               <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>notifications</span>
             </button>
             <Link to="/profile" className="ml-2 shrink-0">

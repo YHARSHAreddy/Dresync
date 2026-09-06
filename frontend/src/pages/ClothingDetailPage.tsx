@@ -3,11 +3,16 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { wardrobeApi } from '../api/wardrobe';
 import { ImageUploader } from '../components/wardrobe/ImageUploader';
 import { format } from 'date-fns';
+import { vtoApi } from '../api/vto';
+import { useState } from 'react';
 
 export function ClothingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const [vtoImage, setVtoImage] = useState<string | null>(null);
+  const [isVtoMock, setIsVtoMock] = useState(false);
+  const [isVtoLoading, setIsVtoLoading] = useState(false);
 
   const { data: item, isLoading } = useQuery({
     queryKey: ['clothing-item', id],
@@ -24,6 +29,25 @@ export function ClothingDetailPage() {
 
   const handleImageUpload = (updated: any) => {
     qc.setQueryData(['clothing-item', id], updated);
+  };
+
+  const handleVto = async () => {
+    if (!id) return;
+    setIsVtoLoading(true);
+    setVtoImage(null);
+    try {
+      const res = await vtoApi.tryOnItem(id);
+      if (res.success && res.result_image_url) {
+        setVtoImage(res.result_image_url);
+        setIsVtoMock(res.is_mock || false);
+      } else {
+        alert(res.error_message || 'Virtual Try-On failed');
+      }
+    } catch (err: any) {
+      alert(err?.response?.data?.detail || 'Could not perform Virtual Try-On');
+    } finally {
+      setIsVtoLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -58,7 +82,7 @@ export function ClothingDetailPage() {
 
       <div className="flex flex-col md:flex-row gap-12 items-start">
         {/* Image / Uploader */}
-        <div className="w-full md:w-[400px] flex-shrink-0">
+        <div className="w-full md:w-[400px] flex-shrink-0 flex flex-col gap-6">
           <div className="glass-card p-2">
             <ImageUploader
               itemId={item.id}
@@ -66,6 +90,27 @@ export function ClothingDetailPage() {
               onUpload={handleImageUpload}
             />
           </div>
+          
+          {vtoImage && (
+            <div className="glass-card p-4 border border-secondary flex flex-col gap-2 relative overflow-hidden">
+              <div className="font-label-caps text-label-caps text-secondary uppercase tracking-widest flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2"><span className="material-symbols-outlined" style={{ fontSize: '18px' }}>auto_awesome</span> Try-On Result</span>
+                {isVtoMock && (
+                  <span className="bg-warning/20 text-warning px-2 py-0.5 rounded-sm text-[10px] flex items-center gap-1">
+                    <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>warning</span> MOCK / DEMO
+                  </span>
+                )}
+              </div>
+              <div className="w-full aspect-[3/4] bg-surface-container-low rounded-xl overflow-hidden relative border border-outline-variant">
+                 <img src={vtoImage} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
+                 {isVtoMock && (
+                   <div className="absolute inset-x-0 bottom-0 bg-surface/80 backdrop-blur-sm p-2 text-center border-t border-outline-variant text-on-surface-variant font-label-caps text-label-caps">
+                     Demo Preview (Original Image)
+                   </div>
+                 )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Details */}
@@ -176,8 +221,19 @@ export function ClothingDetailPage() {
           )}
 
           {/* Actions */}
-          <div className="flex gap-4 pt-6 mt-auto border-t border-outline-variant/50">
-            <Link to={`/wardrobe/${item.id}/edit`} className="bg-transparent border border-outline text-primary font-button text-button px-8 py-3 rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+          <div className="flex flex-wrap gap-4 pt-6 mt-auto border-t border-outline-variant/50">
+            <button 
+              onClick={handleVto} 
+              disabled={isVtoLoading}
+              className="bg-primary text-on-primary font-button text-button px-6 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 disabled:opacity-50"
+            >
+              {isVtoLoading ? (
+                <><span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>sync</span> Generating...</>
+              ) : (
+                <><span className="material-symbols-outlined" style={{ fontSize: '18px' }}>auto_awesome</span> Virtual Try-On</>
+              )}
+            </button>
+            <Link to={`/wardrobe/${item.id}/edit`} className="bg-transparent border border-outline text-primary font-button text-button px-6 py-3 rounded-lg hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
               <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>edit</span>
               Edit Details
             </Link>
