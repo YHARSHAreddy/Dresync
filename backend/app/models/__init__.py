@@ -4,3 +4,4 @@ from app.models.user import User  # noqa: F401
 from app.models.clothing import ClothingItem, ClothingCategory, ClothingPattern, UsageStatus  # noqa: F401
 from app.models.outfit import Outfit, OutfitHistory  # noqa: F401
 from app.models.planner import WeeklyPlan  # noqa: F401
+from app.models.vto_job import VTOJob, JobStatus  # noqa: F401

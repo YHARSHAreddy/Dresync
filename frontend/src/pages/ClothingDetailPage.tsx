@@ -37,15 +37,36 @@ export function ClothingDetailPage() {
     setVtoImage(null);
     try {
       const res = await vtoApi.tryOnItem(id);
-      if (res.success && res.result_image_url) {
-        setVtoImage(res.result_image_url);
-        setIsVtoMock(res.is_mock || false);
+      if (res.success && res.job_id) {
+        pollJobStatus(res.job_id);
       } else {
         alert(res.error_message || 'Virtual Try-On failed');
+        setIsVtoLoading(false);
       }
     } catch (err: any) {
       alert(err?.response?.data?.detail || 'Could not perform Virtual Try-On');
-    } finally {
+      setIsVtoLoading(false);
+    }
+  };
+
+  const pollJobStatus = async (jobId: string) => {
+    try {
+      const statusRes = await vtoApi.getJobStatus(jobId);
+      if (statusRes.status === 'completed') {
+        setVtoImage(statusRes.result_image_url || null);
+        setIsVtoMock(statusRes.result_image_url?.startsWith('/uploads') ? false : true); // Simplistic check for mock vs real if needed, or rely on another flag.
+        // Actually our backend doesn't return is_mock on the job yet, let's assume it's true for now or adapt.
+        setIsVtoLoading(false);
+      } else if (statusRes.status === 'failed') {
+        alert(statusRes.error_message || 'Virtual Try-On failed during processing');
+        setIsVtoLoading(false);
+      } else {
+        // Still queued or processing
+        setTimeout(() => pollJobStatus(jobId), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error checking job status');
       setIsVtoLoading(false);
     }
   };
