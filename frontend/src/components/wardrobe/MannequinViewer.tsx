@@ -51,7 +51,7 @@ function FallbackMannequin({ profile }: { profile: BodyProfile }) {
   );
 }
 
-class ErrorBoundary extends Component<{children: ReactNode, fallback: ReactNode}, {hasError: boolean}> {
+class ErrorBoundary extends Component<{ children: ReactNode, fallback: ReactNode }, { hasError: boolean }> {
   state = { hasError: false };
   static getDerivedStateFromError() { return { hasError: true }; }
   componentDidCatch(error: Error, info: ErrorInfo) {
@@ -71,16 +71,16 @@ export function MannequinViewer() {
         <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>3d_rotation</span>
         Interactive Stylist Model
       </div>
-      
+
       <Canvas camera={{ position: [0, 1, 3.5], fov: 40 }} shadows>
         {/* Professional Studio Lighting */}
         <ambientLight intensity={0.4} />
         <hemisphereLight intensity={0.3} color="#ffffff" groundColor="#444444" />
         {/* Key light */}
-        <directionalLight 
-          position={[5, 10, 5]} 
-          intensity={1.2} 
-          castShadow 
+        <directionalLight
+          position={[5, 10, 5]}
+          intensity={1.2}
+          castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
         />
@@ -88,29 +88,29 @@ export function MannequinViewer() {
         <directionalLight position={[-5, 5, -5]} intensity={0.6} />
         {/* Rim light for definition */}
         <pointLight position={[0, 2, -3]} intensity={2} color="#aaccff" />
-        
+
         <ErrorBoundary fallback={<FallbackMannequin profile={profile} />}>
           <Suspense fallback={null}>
             <HumanModel profile={profile} modelUrl="/models/human_male.glb" />
           </Suspense>
         </ErrorBoundary>
-        
+
         <Environment preset="studio" />
-        
-        <ContactShadows 
-          position={[0, -1, 0]} 
-          opacity={0.6} 
-          scale={5} 
-          blur={1.5} 
-          far={4} 
+
+        <ContactShadows
+          position={[0, -1, 0]}
+          opacity={0.6}
+          scale={5}
+          blur={1.5}
+          far={4}
         />
-        
-        <OrbitControls 
-          enablePan={false} 
-          enableZoom={true} 
+
+        <OrbitControls
+          enablePan={false}
+          enableZoom={true}
           enableDamping={true}
           dampingFactor={0.05}
-          minDistance={1.5} 
+          minDistance={1.5}
           maxDistance={5}
           minPolarAngle={Math.PI / 4}
           maxPolarAngle={Math.PI / 1.6}
