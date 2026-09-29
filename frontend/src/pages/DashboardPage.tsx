@@ -5,6 +5,7 @@ import { outfitsApi } from '../api/outfits';
 import { useAuthStore } from '../store/authStore';
 import { ClothingCard } from '../components/wardrobe/ClothingCard';
 import { OutfitCard } from '../components/outfit/OutfitCard';
+import { MannequinViewer } from '../components/wardrobe/MannequinViewer';
 
 export function DashboardPage() {
   const { user } = useAuthStore();
@@ -92,6 +93,19 @@ export function DashboardPage() {
             </Link>
           </div>
         )}
+      </section>
+
+      {/* 3D Mannequin Viewer */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-outline-variant pb-2">
+          <h2 className="font-headline-sm text-headline-sm text-primary flex items-center gap-2">
+            <span className="material-symbols-outlined">accessibility_new</span>
+            Interactive Stylist
+          </h2>
+        </div>
+        <div className="h-[500px]">
+          <MannequinViewer />
+        </div>
       </section>
 
       {/* Secondary: Wardrobe Summary */}

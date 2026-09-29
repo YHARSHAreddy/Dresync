@@ -5,6 +5,7 @@ export interface User {
   email: string;
   username: string;
   full_name?: string;
+  profile_image_url?: string;
   created_at: string;
 }
 
@@ -80,6 +81,7 @@ export interface Outfit {
   season?: string;
   is_favorite: boolean;
   is_ai_generated: boolean;
+  image_url?: string;
   created_at: string;
 }
 

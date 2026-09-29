@@ -62,6 +62,7 @@ const mockAdapter = async (config: InternalAxiosRequestConfig): Promise<AxiosRes
 
 const api = axios.create({
   baseURL: '/api/v1',
+  adapter: mockAdapter,
 });
 
 api.interceptors.request.use((config) => {

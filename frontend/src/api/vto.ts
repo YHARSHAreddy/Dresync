@@ -6,6 +6,7 @@ export interface VTOResponse {
   error_message?: string;
   is_mock?: boolean;
   status?: string;
+  result_image_url?: string;
 }
 
 export interface VTOJobResponse {
