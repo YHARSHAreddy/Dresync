@@ -2,9 +2,12 @@ import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+def _new_uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class JobStatus(str, enum.Enum):
@@ -17,11 +20,11 @@ class JobStatus(str, enum.Enum):
 class VTOJob(Base):
     __tablename__ = "vto_jobs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    
+    id = Column(String(36), primary_key=True, default=_new_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
     status = Column(Enum(JobStatus), default=JobStatus.queued, nullable=False, index=True)
-    
+
     result_image_url = Column(String, nullable=True)
     error_message = Column(String, nullable=True)
 

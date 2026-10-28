@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-import uuid
-import os
 
 from app.core.database import get_db
 from app.api.v1.deps import get_current_user
@@ -30,7 +28,7 @@ class VTOJobResponse(BaseModel):
 
 @router.post("/item/{item_id}", response_model=VTOResponse)
 def try_on_item(
-    item_id: uuid.UUID,
+    item_id: str,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -86,7 +84,7 @@ def try_on_item(
 
 @router.get("/job/{job_id}", response_model=VTOJobResponse)
 def get_vto_job(
-    job_id: uuid.UUID,
+    job_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -103,7 +101,7 @@ def get_vto_job(
 
 @router.post("/outfit/{outfit_id}", response_model=VTOResponse)
 def try_on_outfit(
-    outfit_id: uuid.UUID,
+    outfit_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -120,8 +118,6 @@ def try_on_outfit(
         raise HTTPException(status_code=400, detail="Multi-garment outfit VTO is not currently supported by the active provider.")
         
     # Future multi-garment implementation would go here.
-    # For now, this endpoint safely errors out instead of faking it.
-    
     return VTOResponse(
         success=False,
         error_message="Not implemented"

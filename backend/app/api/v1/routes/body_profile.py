@@ -1,9 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from uuid import UUID
 
 from app.core.database import get_db
-from app.core.security import get_current_user
+from app.api.v1.deps import get_current_user
 from app.models.user import User, BodyProfile
 from app.schemas.body_profile import BodyProfileCreate, BodyProfileUpdate, BodyProfileResponse
 

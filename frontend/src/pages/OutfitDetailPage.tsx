@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { outfitsApi } from '../api/outfits';
 import { vtoApi } from '../api/vto';
 import { CATEGORY_EMOJIS, ClothingItem } from '../types';
+import { MannequinViewer } from '../components/wardrobe/MannequinViewer';
 
 function GarmentCard({ item, label }: { item?: ClothingItem; label: string }) {
   if (!item) return null;
@@ -28,6 +29,7 @@ export function OutfitDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   
+  const [viewMode, setViewMode] = useState<'3d' | '2d'>('3d');
   const [vtoImage, setVtoImage] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -81,30 +83,64 @@ export function OutfitDetailPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-        {/* Left Col: VTO Preview */}
+        {/* Left Col: 3D Mannequin & VTO Preview */}
         <div className="glass-card p-6 border border-outline-variant flex flex-col gap-4">
-          <div className="flex justify-between items-center">
-            <h2 className="font-headline-sm text-primary flex items-center gap-2">
-              <span className="material-symbols-outlined text-secondary">auto_awesome</span> Virtual Try-On
-            </h2>
-            <button
-              onClick={handleVTO}
-              disabled={isGenerating}
-              className="bg-primary text-on-primary font-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity uppercase tracking-widest disabled:opacity-50 flex items-center gap-2"
-            >
-              {isGenerating ? (
-                <><span className="material-symbols-outlined animate-spin" style={{ fontSize: '18px' }}>sync</span> Generating...</>
-              ) : 'Try it on'}
-            </button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-1 bg-surface-container-high p-1 rounded-lg">
+              <button
+                type="button"
+                onClick={() => setViewMode('3d')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-label-caps text-label-caps uppercase transition-colors ${
+                  viewMode === '3d'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:text-primary'
+                }`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>3d_rotation</span>
+                3D Model
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('2d')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md font-label-caps text-label-caps uppercase transition-colors ${
+                  viewMode === '2d'
+                    ? 'bg-primary text-on-primary shadow-sm'
+                    : 'text-on-surface-variant hover:text-primary'
+                }`}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>photo_camera</span>
+                AI Photo
+              </button>
+            </div>
+
+            {viewMode === '2d' && (
+              <button
+                onClick={handleVTO}
+                disabled={isGenerating}
+                className="bg-primary text-on-primary font-button px-4 py-2 rounded-lg hover:opacity-90 transition-opacity uppercase tracking-widest disabled:opacity-50 flex items-center gap-2 text-xs"
+              >
+                {isGenerating ? (
+                  <><span className="material-symbols-outlined animate-spin" style={{ fontSize: '16px' }}>sync</span> Generating...</>
+                ) : 'Generate Photo'}
+              </button>
+            )}
           </div>
           
-          <div className="w-full aspect-[3/4] bg-surface-container-low rounded-xl border border-dashed border-outline-variant flex items-center justify-center overflow-hidden relative">
-            {vtoImage ? (
+          <div className="w-full aspect-[3/4] min-h-[440px] bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-center overflow-hidden relative">
+            {viewMode === '3d' ? (
+              <div className="w-full h-full relative">
+                <MannequinViewer outfit={outfit} />
+                <div className="absolute bottom-3 left-3 z-10 bg-surface/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-outline-variant/30 text-xs text-on-surface-variant flex items-center gap-1.5 pointer-events-none">
+                  <span className="material-symbols-outlined" style={{ fontSize: '14px' }}>touch_app</span>
+                  360° View &bull; Realistic Athletic Male (183cm, 87kg)
+                </div>
+              </div>
+            ) : vtoImage ? (
               <img src={vtoImage} alt="Virtual Try-On Result" className="w-full h-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-4 text-outline/50 p-8 text-center">
                 <span className="material-symbols-outlined" style={{ fontSize: '64px' }}>face</span>
-                <p className="font-body-md max-w-[250px]">Click "Try it on" to see how this outfit looks on your body profile.</p>
+                <p className="font-body-md max-w-[250px]">Click "Generate Photo" to render an AI photo on your uploaded avatar.</p>
               </div>
             )}
           </div>

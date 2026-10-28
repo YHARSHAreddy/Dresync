@@ -37,3 +37,6 @@ Thumbs.db
 
 # Docker
 *.log
+
+backend/dresync.db
+backend/*.db

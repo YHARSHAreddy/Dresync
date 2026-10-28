@@ -3,9 +3,16 @@ import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows } from '@react-three/drei';
 import { HumanModel } from '../3d/HumanModel';
 import { BodyProfile, defaultMaleProfile } from '../3d/BodyProfile';
+import { ClothingLayer } from '../3d/ClothingLayer';
+
+import { Outfit } from '../../types';
+
+interface MannequinViewerProps {
+  outfit?: Outfit | null;
+}
 
 // If the realistic GLTF model is not found at /models/human_male.glb, this fallback is used.
-function FallbackMannequin({ profile }: { profile: BodyProfile }) {
+function FallbackMannequin({ profile, outfit }: { profile: BodyProfile, outfit?: Outfit | null }) {
   const baseScaleY = profile.heightCm / 180;
   const weightFactor = profile.weightKg / 75;
   const isAthletic = profile.physique === 'athletic';
@@ -14,22 +21,19 @@ function FallbackMannequin({ profile }: { profile: BodyProfile }) {
 
   return (
     <group position={[0, -1, 0]} scale={[scaleX, baseScaleY, scaleZ]}>
-      {/* Torso - athletic build */}
+      {/* Fallback body parts */}
       <mesh position={[0, 1.25, 0]}>
         <cylinderGeometry args={[0.25, 0.2, 0.7, 32]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
       </mesh>
-      {/* Chest / Shoulders */}
       <mesh position={[0, 1.5, 0]}>
         <boxGeometry args={[0.6, 0.3, 0.25]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
       </mesh>
-      {/* Head */}
       <mesh position={[0, 1.85, 0]}>
         <sphereGeometry args={[0.12, 32, 32]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
       </mesh>
-      {/* Legs */}
       <mesh position={[-0.12, 0.45, 0]}>
         <cylinderGeometry args={[0.07, 0.06, 0.9, 16]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
@@ -38,7 +42,6 @@ function FallbackMannequin({ profile }: { profile: BodyProfile }) {
         <cylinderGeometry args={[0.07, 0.06, 0.9, 16]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
       </mesh>
-      {/* Arms */}
       <mesh position={[-0.35, 1.1, 0]} rotation={[0, 0, -0.1]}>
         <cylinderGeometry args={[0.05, 0.04, 0.7, 16]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
@@ -47,6 +50,11 @@ function FallbackMannequin({ profile }: { profile: BodyProfile }) {
         <cylinderGeometry args={[0.05, 0.04, 0.7, 16]} />
         <meshStandardMaterial color="#d4c5b9" roughness={0.5} />
       </mesh>
+      
+      {/* Render clothing on fallback as well! */}
+      <Suspense fallback={null}>
+        <ClothingLayer outfit={outfit} />
+      </Suspense>
     </group>
   );
 }
@@ -60,7 +68,7 @@ class ErrorBoundary extends Component<{ children: ReactNode, fallback: ReactNode
   render() { return this.state.hasError ? this.props.fallback : this.props.children; }
 }
 
-export function MannequinViewer() {
+export function MannequinViewer({ outfit }: MannequinViewerProps) {
   // Pass the user's specific body profile
   // This could later come from a global state or API
   const profile = defaultMaleProfile;
@@ -89,9 +97,9 @@ export function MannequinViewer() {
         {/* Rim light for definition */}
         <pointLight position={[0, 2, -3]} intensity={2} color="#aaccff" />
 
-        <ErrorBoundary fallback={<FallbackMannequin profile={profile} />}>
+        <ErrorBoundary fallback={<FallbackMannequin profile={profile} outfit={outfit} />}>
           <Suspense fallback={null}>
-            <HumanModel profile={profile} modelUrl="/models/human_male.glb" />
+            <HumanModel profile={profile} modelUrl="/models/human_male.glb" outfit={outfit} />
           </Suspense>
         </ErrorBoundary>
 

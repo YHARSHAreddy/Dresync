@@ -104,7 +104,7 @@ export function DashboardPage() {
           </h2>
         </div>
         <div className="h-[500px]">
-          <MannequinViewer />
+          <MannequinViewer outfit={todaysOutfit} />
         </div>
       </section>
 

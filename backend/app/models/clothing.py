@@ -2,9 +2,12 @@ import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import Column, String, Integer, Boolean, DateTime, Date, Text, Enum, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+def _new_uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class ClothingCategory(str, enum.Enum):
@@ -34,21 +37,23 @@ class UsageStatus(str, enum.Enum):
 class ClothingItem(Base):
     __tablename__ = "clothing_items"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # Use String(36) instead of postgresql.UUID so SQLite works out of the box
+    id = Column(String(36), primary_key=True, default=_new_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     name = Column(String(200), nullable=False)
     category = Column(Enum(ClothingCategory), nullable=False)
     subcategory = Column(String(100), nullable=True)
 
     primary_color = Column(String(50), nullable=False)
-    secondary_colors = Column(JSONB, default=list)  # ["white", "grey"]
+    # Store JSON arrays as plain TEXT for SQLite compat; serialised/deserialised in service layer
+    secondary_colors = Column(Text, default="[]")
 
     pattern = Column(Enum(ClothingPattern), default=ClothingPattern.solid)
 
-    styles = Column(JSONB, default=list)     # ["casual", "smart_casual"]
-    seasons = Column(JSONB, default=list)    # ["spring", "summer", "all"]
-    occasions = Column(JSONB, default=list)  # ["casual", "work", "formal"]
+    styles = Column(Text, default="[]")      # JSON list stored as text
+    seasons = Column(Text, default="[]")     # JSON list stored as text
+    occasions = Column(Text, default="[]")   # JSON list stored as text
 
     notes = Column(Text, nullable=True)
     image_url = Column(String, nullable=True)

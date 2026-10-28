@@ -1,16 +1,24 @@
 import uuid
 from datetime import datetime
-import sqlalchemy
-from sqlalchemy import Column, String, Boolean, DateTime
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, Boolean, DateTime, Float, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+def _uuid_pk():
+    """Cross-database UUID primary key (stored as VARCHAR for SQLite compat)."""
+    return Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()), index=True)
+
+
+def _uuid_fk(target: str, **kwargs):
+    """Cross-database UUID foreign key."""
+    return Column(String(36), ForeignKey(target, **kwargs), nullable=False)
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = _uuid_pk()
     email = Column(String(255), unique=True, nullable=False, index=True)
     username = Column(String(100), unique=True, nullable=False)
     hashed_password = Column(String, nullable=False)
@@ -35,13 +43,14 @@ class User(Base):
         "BodyProfile", back_populates="user", uselist=False, cascade="all, delete-orphan"
     )
 
+
 class BodyProfile(Base):
     __tablename__ = "body_profiles"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), sqlalchemy.ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
-    
-    height_cm = Column(sqlalchemy.Float, nullable=True)
+    id = _uuid_pk()
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+
+    height_cm = Column(Float, nullable=True)
     front_photo_url = Column(String, nullable=True)
     side_photo_url = Column(String, nullable=True)
 

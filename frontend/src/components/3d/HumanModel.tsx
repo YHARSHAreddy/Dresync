@@ -1,14 +1,17 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, Suspense } from 'react';
 import { useGLTF, useAnimations } from '@react-three/drei';
 import { Group } from 'three';
 import { BodyProfile } from './BodyProfile';
+import { ClothingLayer } from './ClothingLayer';
+import { Outfit } from '../../types';
 
 interface HumanModelProps {
   profile: BodyProfile;
   modelUrl?: string; // Path to realistic male GLTF/GLB
+  outfit?: Outfit | null;
 }
 
-export function HumanModel({ profile, modelUrl = '/models/human_male.glb' }: HumanModelProps) {
+export function HumanModel({ profile, modelUrl = '/models/human_male.glb', outfit }: HumanModelProps) {
   const group = useRef<Group>(null);
   
   // Attempt to load the model. The parent ErrorBoundary will catch any 404s.
@@ -44,8 +47,10 @@ export function HumanModel({ profile, modelUrl = '/models/human_male.glb' }: Hum
       */}
       <group scale={[scaleX, baseScaleY, scaleZ]} position={[0, -1, 0]}>
         <primitive object={scene} />
-        {/* Placeholder for future clothing models */}
-        {/* <ClothingLayer items={activeOutfit} /> */}
+        {/* Render clothing models over the human */}
+        <Suspense fallback={null}>
+          <ClothingLayer outfit={outfit} />
+        </Suspense>
       </group>
     </group>
   );

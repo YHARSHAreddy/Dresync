@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Outfit } from '../../types';
 import { outfitsApi } from '../../api/outfits';
+import { TryOnModal } from '../wardrobe/TryOnModal';
 
 interface OutfitCardProps {
   outfit: Outfit;
@@ -28,6 +29,7 @@ function ItemThumb({ item, slot }: { item?: any; slot: string }) {
 export function OutfitCard({ outfit, onUpdate, onDelete, showWear = true }: OutfitCardProps) {
   const [favoriting, setFavoriting] = useState(false);
   const [wearing, setWearing] = useState(false);
+  const [show3DModal, setShow3DModal] = useState(false);
   const navigate = useNavigate();
 
   const score = Math.round(outfit.compatibility_score * 100);
@@ -128,7 +130,19 @@ export function OutfitCard({ outfit, onUpdate, onDelete, showWear = true }: Outf
           {outfit.season && <span className="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider before:content-['•'] before:mr-2 before:text-outline">{outfit.season}</span>}
         </div>
 
-        <div className="flex items-center gap-4 mt-2 pt-4 border-t border-outline-variant/50">
+        <div className="flex items-center gap-3 mt-2 pt-4 border-t border-outline-variant/50">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShow3DModal(true);
+            }}
+            className="bg-secondary/15 hover:bg-secondary/25 text-secondary border border-secondary/30 px-3.5 py-2 rounded-lg font-button text-button flex items-center justify-center gap-1.5 transition-colors"
+            title="Try on realistic 3D mannequin"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>3d_rotation</span>
+            <span>3D Model</span>
+          </button>
+
           {showWear && (
             <button
               onClick={handleWear}
@@ -139,11 +153,17 @@ export function OutfitCard({ outfit, onUpdate, onDelete, showWear = true }: Outf
               {wearing ? 'Logging...' : 'Log Wear'}
             </button>
           )}
-          <button onClick={handleDelete} className="text-on-surface-variant hover:text-error transition-colors" aria-label="Delete">
+          <button onClick={handleDelete} className="text-on-surface-variant hover:text-error transition-colors p-2" aria-label="Delete">
             <span className="material-symbols-outlined">delete</span>
           </button>
         </div>
       </div>
+
+      <TryOnModal
+        isOpen={show3DModal}
+        onClose={() => setShow3DModal(false)}
+        outfit={outfit}
+      />
     </div>
   );
 }

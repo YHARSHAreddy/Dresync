@@ -1,29 +1,32 @@
 import uuid
 from datetime import datetime, date
 from sqlalchemy import Column, String, Boolean, DateTime, Date, Float, Integer, ForeignKey, Text
-from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+def _new_uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class Outfit(Base):
     __tablename__ = "outfits"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(String(36), primary_key=True, default=_new_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     name = Column(String(200), nullable=True)
 
-    # Item references — each role is optional since not every outfit has all pieces
-    top_id = Column(UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
-    bottom_id = Column(UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
-    outerwear_id = Column(UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
-    shoes_id = Column(UUID(as_uuid=True), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
-    accessory_ids = Column(JSONB, default=list)  # list of UUID strings
+    # Item references — each role is optional
+    top_id = Column(String(36), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
+    bottom_id = Column(String(36), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
+    outerwear_id = Column(String(36), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
+    shoes_id = Column(String(36), ForeignKey("clothing_items.id", ondelete="SET NULL"), nullable=True)
+    accessory_ids = Column(Text, default="[]")  # JSON list stored as text
 
     # Scoring
     compatibility_score = Column(Float, default=0.0)
-    recommendation_reasons = Column(JSONB, default=list)  # [{"type": "color", "description": "..."}]
+    recommendation_reasons = Column(Text, default="[]")  # JSON list stored as text
 
     # Context
     occasion = Column(String(100), nullable=True)
@@ -46,9 +49,9 @@ class Outfit(Base):
 class OutfitHistory(Base):
     __tablename__ = "outfit_history"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="CASCADE"), nullable=False)
+    id = Column(String(36), primary_key=True, default=_new_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="CASCADE"), nullable=False)
     worn_date = Column(Date, nullable=False, default=date.today)
     rating = Column(Integer, nullable=True)  # 1–5 stars
     notes = Column(Text, nullable=True)

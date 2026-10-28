@@ -1,27 +1,30 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, DateTime, Date, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Column, String, DateTime, Date, ForeignKey
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+def _new_uuid() -> str:
+    return str(uuid.uuid4())
 
 
 class WeeklyPlan(Base):
     __tablename__ = "weekly_plans"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    id = Column(String(36), primary_key=True, default=_new_uuid, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     # Monday of the week this plan covers
     week_start = Column(Date, nullable=False)
 
-    monday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    tuesday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    wednesday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    thursday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    friday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    saturday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
-    sunday_outfit_id = Column(UUID(as_uuid=True), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    monday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    tuesday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    wednesday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    thursday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    friday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    saturday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
+    sunday_outfit_id = Column(String(36), ForeignKey("outfits.id", ondelete="SET NULL"), nullable=True)
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)

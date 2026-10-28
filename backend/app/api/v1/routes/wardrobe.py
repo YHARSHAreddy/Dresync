@@ -1,7 +1,6 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, UploadFile, File, Query
 from sqlalchemy.orm import Session
-import uuid
 from app.core.database import get_db
 from app.api.v1.deps import get_current_user
 from app.models.user import User
@@ -42,7 +41,7 @@ def add_item(
 
 @router.get("/items/{item_id}", response_model=ClothingItemOut)
 def get_item(
-    item_id: uuid.UUID,
+    item_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -51,7 +50,7 @@ def get_item(
 
 @router.put("/items/{item_id}", response_model=ClothingItemOut)
 def update_item(
-    item_id: uuid.UUID,
+    item_id: str,
     data: ClothingItemUpdate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -61,7 +60,7 @@ def update_item(
 
 @router.delete("/items/{item_id}", status_code=204)
 def delete_item(
-    item_id: uuid.UUID,
+    item_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -70,7 +69,7 @@ def delete_item(
 
 @router.post("/items/{item_id}/image", response_model=ClothingItemOut)
 def upload_image(
-    item_id: uuid.UUID,
+    item_id: str,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
