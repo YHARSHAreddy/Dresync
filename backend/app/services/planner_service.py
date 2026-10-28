@@ -78,16 +78,18 @@ def _eager_load_plan(db: Session, plan: WeeklyPlan) -> WeeklyPlan:
     )
 
 
-def _save_outfit(db: Session, user_id: uuid.UUID, rec: dict) -> Outfit:
+import json
+
+def _save_outfit(db: Session, user_id: str, rec: dict) -> Outfit:
     outfit = Outfit(
-        user_id=user_id,
+        user_id=str(user_id),
         top_id=rec["top"].id if rec["top"] else None,
         bottom_id=rec["bottom"].id if rec["bottom"] else None,
         outerwear_id=rec["outerwear"].id if rec["outerwear"] else None,
         shoes_id=rec["shoes"].id if rec["shoes"] else None,
-        accessory_ids=[str(a.id) for a in rec.get("accessories", [])],
+        accessory_ids=json.dumps([str(a.id) for a in rec.get("accessories", [])]),
         compatibility_score=rec["score"],
-        recommendation_reasons=rec["reasons"],
+        recommendation_reasons=json.dumps(rec["reasons"]),
         is_ai_generated=True,
     )
     db.add(outfit)
@@ -97,9 +99,10 @@ def _save_outfit(db: Session, user_id: uuid.UUID, rec: dict) -> Outfit:
 
 def get_current_week_plan(db: Session, user_id: uuid.UUID) -> Optional[WeeklyPlan]:
     week_start = _current_week_start()
+    user_id_str = str(user_id)
     plan = (
         db.query(WeeklyPlan)
-        .filter(WeeklyPlan.user_id == user_id, WeeklyPlan.week_start == week_start)
+        .filter(WeeklyPlan.user_id == user_id_str, WeeklyPlan.week_start == week_start)
         .first()
     )
     if plan:
@@ -111,36 +114,54 @@ def generate_weekly_plan(
     db: Session, user_id: uuid.UUID, req: PlannerGenerateRequest
 ) -> WeeklyPlan:
     week_start = _current_week_start()
+    user_id_str = str(user_id)
 
     items = (
         db.query(ClothingItem)
-        .filter(ClothingItem.user_id == user_id, ClothingItem.usage_status == "active")
+        .filter(ClothingItem.user_id == user_id_str, ClothingItem.usage_status == "active")
         .all()
     )
 
     tops    = [i for i in items if i.category.value == "top"]
     bottoms = [i for i in items if i.category.value == "bottom"]
 
-    if not tops or not bottoms:
+    if not tops and not bottoms:
+        raise HTTPException(
+            status_code=400,
+            detail="Add at least one top and one bottom to generate a weekly plan.",
+        )
+    elif not tops:
+        raise HTTPException(
+            status_code=400,
+            detail="Add at least one top to generate a weekly plan.",
+        )
+    elif not bottoms:
+        raise HTTPException(
+            status_code=400,
+            detail="Add at least one bottom to generate a weekly plan.",
+        )
+
+    # Get all potential outfits (without dedup) to know our baseline pool
+    pool = recommend_outfits(
+        items,
+        n=20,
+        occasion=req.occasion,
+        season=req.season,
+    )
+    if not pool:
+        # Fallback to no occasion/season filters if strict filters produced 0 combos
+        pool = recommend_outfits(items, n=20)
+
+    if not pool:
         raise HTTPException(
             status_code=400,
             detail="Add at least one top and one bottom to generate a weekly plan.",
         )
 
-    # Get recently worn outfits to avoid repetition
-    recent_history = (
-        db.query(OutfitHistory)
-        .filter(
-            OutfitHistory.user_id == user_id,
-            OutfitHistory.worn_date >= date.today() - timedelta(days=14),
-        )
-        .all()
-    )
-    recently_worn_outfit_ids = {h.outfit_id for h in recent_history}
-
-    # Generate 7 distinct outfits
+    # Generate 7 outfits, attempting distinct outfits first then reusing from pool
     used_item_sets: List[Set[str]] = []
     day_outfits: dict = {}
+    pool_index = 0
 
     for day in DAYS:
         recs = recommend_outfits(
@@ -151,25 +172,28 @@ def generate_weekly_plan(
             exclude_outfit_item_sets=used_item_sets,
         )
 
-        if not recs:
-            day_outfits[day] = None
-            continue
-
-        outfit_rec = recs[0]
-        outfit = _save_outfit(db, user_id, outfit_rec)
-        used_item_sets.append(outfit_rec.get("item_ids", set()))
-        day_outfits[day] = outfit
+        if recs:
+            outfit_rec = recs[0]
+            outfit = _save_outfit(db, user_id_str, outfit_rec)
+            used_item_sets.append(outfit_rec.get("item_ids", set()))
+            day_outfits[day] = outfit
+        else:
+            # All unique combinations used; reuse from pool so user gets all 7 days
+            fallback_rec = pool[pool_index % len(pool)]
+            pool_index += 1
+            outfit = _save_outfit(db, user_id_str, fallback_rec)
+            day_outfits[day] = outfit
 
     db.flush()
 
     # Upsert weekly plan
     plan = (
         db.query(WeeklyPlan)
-        .filter(WeeklyPlan.user_id == user_id, WeeklyPlan.week_start == week_start)
+        .filter(WeeklyPlan.user_id == user_id_str, WeeklyPlan.week_start == week_start)
         .first()
     )
     if not plan:
-        plan = WeeklyPlan(user_id=user_id, week_start=week_start)
+        plan = WeeklyPlan(user_id=user_id_str, week_start=week_start)
         db.add(plan)
 
     for day in DAYS:
@@ -185,14 +209,15 @@ def regenerate_day(
     user_id: uuid.UUID,
     day: str,
     req: PlannerGenerateRequest,
-) -> WeeklyPlan:
+    ) -> WeeklyPlan:
     if day not in DAYS:
         raise HTTPException(status_code=400, detail=f"Invalid day: {day}")
 
     week_start = _current_week_start()
+    user_id_str = str(user_id)
     plan = (
         db.query(WeeklyPlan)
-        .filter(WeeklyPlan.user_id == user_id, WeeklyPlan.week_start == week_start)
+        .filter(WeeklyPlan.user_id == user_id_str, WeeklyPlan.week_start == week_start)
         .first()
     )
     if not plan:
@@ -200,7 +225,7 @@ def regenerate_day(
 
     items = (
         db.query(ClothingItem)
-        .filter(ClothingItem.user_id == user_id, ClothingItem.usage_status == "active")
+        .filter(ClothingItem.user_id == user_id_str, ClothingItem.usage_status == "active")
         .all()
     )
 
@@ -226,9 +251,14 @@ def regenerate_day(
         season=req.season,
         exclude_outfit_item_sets=used_item_sets,
     )
+    if not recs:
+        # Fall back to any recommendation from pool
+        recs = recommend_outfits(items, n=1, occasion=req.occasion, season=req.season)
+    if not recs:
+        recs = recommend_outfits(items, n=1)
 
     if recs:
-        outfit = _save_outfit(db, user_id, recs[0])
+        outfit = _save_outfit(db, user_id_str, recs[0])
         db.flush()
         setattr(plan, DAY_OUTFIT_COLS[day], outfit.id)
     else:
@@ -236,3 +266,4 @@ def regenerate_day(
 
     db.commit()
     return _eager_load_plan(db, plan)
+

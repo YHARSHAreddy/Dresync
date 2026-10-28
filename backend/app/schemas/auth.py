@@ -1,7 +1,6 @@
 from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import datetime
-import uuid
 
 
 class RegisterRequest(BaseModel):
@@ -40,7 +39,7 @@ class TokenResponse(BaseModel):
 
 
 class UserOut(BaseModel):
-    id: uuid.UUID
+    id: str
     email: str
     username: str
     full_name: Optional[str] = None

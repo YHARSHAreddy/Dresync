@@ -16,6 +16,8 @@ import { OutfitDetailPage } from './pages/OutfitDetailPage';
 import { HistoryPage } from './pages/HistoryPage';
 import { FavoritesPage } from './pages/FavoritesPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { BodyProfilePage } from './pages/BodyProfilePage';
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,7 +63,9 @@ export default function App() {
             <Route path="/planner" element={<PlannerPage />} />
             <Route path="/history" element={<HistoryPage />} />
             <Route path="/favorites" element={<FavoritesPage />} />
+            <Route path="/body-profile" element={<BodyProfilePage />} />
             <Route path="/profile" element={<ProfilePage />} />
+
           </Route>
 
           {/* Catch-all */}

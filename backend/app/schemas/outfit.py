@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 import uuid
@@ -33,8 +33,38 @@ class OutfitOut(BaseModel):
     is_ai_generated: bool
     created_at: datetime
 
+    @field_validator("id", "user_id", mode="before")
+    @classmethod
+    def parse_uuid(cls, v: Any) -> uuid.UUID:
+        if isinstance(v, str):
+            return uuid.UUID(v)
+        return v
+
+    @field_validator("accessory_ids", mode="before")
+    @classmethod
+    def parse_accessory_ids(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            try:
+                import json
+                return json.loads(v)
+            except Exception:
+                return []
+        return v or []
+
+    @field_validator("recommendation_reasons", mode="before")
+    @classmethod
+    def parse_recommendation_reasons(cls, v: Any) -> List[Dict[str, str]]:
+        if isinstance(v, str):
+            try:
+                import json
+                return json.loads(v)
+            except Exception:
+                return []
+        return v or []
+
     class Config:
         from_attributes = True
+
 
 
 class OutfitFavoriteResponse(BaseModel):

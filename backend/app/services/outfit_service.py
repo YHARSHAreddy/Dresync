@@ -18,23 +18,27 @@ def _load_outfit(db: Session, outfit_id: uuid.UUID, user_id: uuid.UUID) -> Outfi
             joinedload(Outfit.outerwear),
             joinedload(Outfit.shoes),
         )
-        .filter(Outfit.id == outfit_id)
+        .filter(Outfit.id == str(outfit_id))
         .first()
     )
     if not outfit:
         raise HTTPException(status_code=404, detail="Outfit not found")
-    if outfit.user_id != user_id:
+    if str(outfit.user_id) != str(user_id):
         raise HTTPException(status_code=403, detail="Not authorised")
     return outfit
 
 
+
+import json
+
 def generate_outfits(
     db: Session, user_id: uuid.UUID, req: OutfitGenerateRequest
 ) -> List[Outfit]:
+    user_id_str = str(user_id)
     # Get all active clothing items for this user
     items = (
         db.query(ClothingItem)
-        .filter(ClothingItem.user_id == user_id, ClothingItem.usage_status == "active")
+        .filter(ClothingItem.user_id == user_id_str, ClothingItem.usage_status == "active")
         .all()
     )
 
@@ -71,14 +75,14 @@ def generate_outfits(
     saved: List[Outfit] = []
     for rec in recommendations:
         outfit = Outfit(
-            user_id=user_id,
+            user_id=user_id_str,
             top_id=rec["top"].id if rec["top"] else None,
             bottom_id=rec["bottom"].id if rec["bottom"] else None,
             outerwear_id=rec["outerwear"].id if rec["outerwear"] else None,
             shoes_id=rec["shoes"].id if rec["shoes"] else None,
-            accessory_ids=[str(a.id) for a in rec.get("accessories", [])],
+            accessory_ids=json.dumps([str(a.id) for a in rec.get("accessories", [])]),
             compatibility_score=rec["score"],
-            recommendation_reasons=rec["reasons"],
+            recommendation_reasons=json.dumps(rec["reasons"]),
             occasion=req.occasion,
             season=req.season,
             is_ai_generated=True,
@@ -88,7 +92,8 @@ def generate_outfits(
     db.commit()
 
     # Return with eager-loaded relationships
-    return get_outfits(db, user_id, limit=count)
+    return get_outfits(db, user_id_str, limit=count)
+
 
 
 def get_outfits(
@@ -106,11 +111,12 @@ def get_outfits(
             joinedload(Outfit.outerwear),
             joinedload(Outfit.shoes),
         )
-        .filter(Outfit.user_id == user_id)
+        .filter(Outfit.user_id == str(user_id))
     )
     if favorites_only:
         query = query.filter(Outfit.is_favorite == True)
     return query.order_by(Outfit.created_at.desc()).offset(skip).limit(limit).all()
+
 
 
 def get_outfit(db: Session, outfit_id: uuid.UUID, user_id: uuid.UUID) -> Outfit:

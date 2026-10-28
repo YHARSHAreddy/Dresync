@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, Query
 from sqlalchemy.orm import Session
+from datetime import datetime
 
 from app.core.database import get_db
+from app.core.config import settings
+from app.storage.local import storage
 from app.api.v1.deps import get_current_user
 from app.models.user import User, BodyProfile
 from app.schemas.body_profile import BodyProfileCreate, BodyProfileUpdate, BodyProfileResponse
@@ -59,3 +62,53 @@ def update_body_profile(
     db.commit()
     db.refresh(profile)
     return profile
+
+@router.post("/me/photo", response_model=BodyProfileResponse)
+def upload_body_photo(
+    file: UploadFile = File(...),
+    photo_type: str = Query("front", regex="^(front|side)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    # Validate file type
+    if file.content_type not in settings.ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed. Use: {', '.join(settings.ALLOWED_IMAGE_TYPES)}",
+        )
+
+    # Read and validate size
+    file_bytes = file.file.read()
+    if len(file_bytes) > settings.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Max size: {settings.MAX_FILE_SIZE // (1024*1024)} MB",
+        )
+
+    profile = db.query(BodyProfile).filter(BodyProfile.user_id == current_user.id).first()
+    if not profile:
+        profile = BodyProfile(user_id=current_user.id)
+        db.add(profile)
+        db.flush()
+
+    # Delete previous photo if it exists
+    old_url = profile.front_photo_url if photo_type == "front" else profile.side_photo_url
+    if old_url:
+        try:
+            storage.delete(old_url)
+        except Exception:
+            pass
+
+    # Save new image to user directory
+    url = storage.save(file_bytes, file.filename, subfolder=str(current_user.id))
+
+    if photo_type == "front":
+        profile.front_photo_url = url
+    else:
+        profile.side_photo_url = url
+
+    profile.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(profile)
+    return profile
+

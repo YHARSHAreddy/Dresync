@@ -1,7 +1,8 @@
-from pydantic import BaseModel
-from typing import Optional, List
+from pydantic import BaseModel, field_validator
+from typing import Optional, List, Any
 from datetime import datetime, date
-import uuid
+
+
 from app.models.clothing import ClothingCategory, ClothingPattern, UsageStatus
 
 
@@ -34,8 +35,8 @@ class ClothingItemUpdate(BaseModel):
 
 
 class ClothingItemOut(BaseModel):
-    id: uuid.UUID
-    user_id: uuid.UUID
+    id: str
+    user_id: str
     name: str
     category: ClothingCategory
     subcategory: Optional[str] = None
@@ -53,8 +54,22 @@ class ClothingItemOut(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+    @field_validator("secondary_colors", "styles", "seasons", "occasions", mode="before")
+    @classmethod
+    def parse_json_lists(cls, v: Any) -> List[str]:
+        if isinstance(v, str):
+            try:
+                import json
+                parsed = json.loads(v)
+                return parsed if isinstance(parsed, list) else []
+            except Exception:
+                return []
+        return v or []
+
     class Config:
         from_attributes = True
+
 
 
 class WardrobeStats(BaseModel):

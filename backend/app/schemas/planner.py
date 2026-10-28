@@ -1,6 +1,6 @@
-from pydantic import BaseModel
-from typing import Optional
-from datetime import date
+from pydantic import BaseModel, field_validator
+from typing import Optional, Any
+from datetime import date, datetime
 import uuid
 from app.schemas.outfit import OutfitOut
 
@@ -25,8 +25,16 @@ class WeeklyPlanOut(BaseModel):
     friday: Optional[OutfitOut] = None
     saturday: Optional[OutfitOut] = None
     sunday: Optional[OutfitOut] = None
-    created_at: date
-    updated_at: date
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("id", "user_id", mode="before")
+    @classmethod
+    def parse_uuid(cls, v: Any) -> uuid.UUID:
+        if isinstance(v, str):
+            return uuid.UUID(v)
+        return v
 
     class Config:
         from_attributes = True
+

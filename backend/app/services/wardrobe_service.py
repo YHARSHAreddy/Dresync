@@ -128,9 +128,14 @@ def upload_image(
     url = storage.save(file_bytes, file.filename, subfolder=str(user_id))
     item.image_url = url
     item.updated_at = datetime.utcnow()
+    for field in ("secondary_colors", "styles", "seasons", "occasions"):
+        val = getattr(item, field)
+        if isinstance(val, list):
+            setattr(item, field, json.dumps(val))
     db.commit()
     db.refresh(item)
     return _deserialize_item(item)
+
 
 
 def get_wardrobe_stats(db: Session, user_id: str) -> WardrobeStats:

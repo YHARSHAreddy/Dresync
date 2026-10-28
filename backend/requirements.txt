@@ -1,11 +1,11 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0
 sqlalchemy>=2.0.36
-# psycopg2-binary removed — not needed when using SQLite for local dev
-# alembic kept for future migrations
+# Uncomment the line below if using PostgreSQL instead of SQLite:
+# psycopg2-binary>=2.9.9
 alembic>=1.14.0
 python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.0
 python-multipart>=0.0.18
 pydantic-settings>=2.6.1
 pydantic[email]>=2.11.0

@@ -38,3 +38,32 @@ class WeeklyPlan(Base):
     friday_outfit = relationship("Outfit", foreign_keys=[friday_outfit_id])
     saturday_outfit = relationship("Outfit", foreign_keys=[saturday_outfit_id])
     sunday_outfit = relationship("Outfit", foreign_keys=[sunday_outfit_id])
+
+    @property
+    def monday(self):
+        return self.monday_outfit
+
+    @property
+    def tuesday(self):
+        return self.tuesday_outfit
+
+    @property
+    def wednesday(self):
+        return self.wednesday_outfit
+
+    @property
+    def thursday(self):
+        return self.thursday_outfit
+
+    @property
+    def friday(self):
+        return self.friday_outfit
+
+    @property
+    def saturday(self):
+        return self.saturday_outfit
+
+    @property
+    def sunday(self):
+        return self.sunday_outfit
+
