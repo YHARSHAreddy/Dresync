@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { bodyProfileApi } from '../api/bodyProfile';
+
 
 export function ProfilePage() {
   const { user, logout } = useAuthStore();
@@ -131,22 +133,36 @@ export function ProfilePage() {
           </div>
         </section>
 
-        {/* Body Measurements */}
+        {/* Body Measurements & Photos CTA */}
         <section className="glass-card p-8 md:col-span-2">
-          <div className="settings-group-header flex justify-between items-end">
-            <h3 className="font-headline-sm text-headline-sm text-primary flex items-center gap-2">
-              <span className="material-symbols-outlined">straighten</span>
-              Precision Measurements
-            </h3>
-            <button 
-              onClick={() => updateProfileMutation.mutate()} 
-              disabled={updateProfileMutation.isPending}
-              className="font-label-caps text-label-caps text-primary hover:text-secondary transition-colors uppercase tracking-widest disabled:opacity-50"
-            >
-              {updateProfileMutation.isPending ? 'Updating...' : 'Update'}
-            </button>
+          <div className="settings-group-header flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+            <div>
+              <h3 className="font-headline-sm text-headline-sm text-primary flex items-center gap-2">
+                <span className="material-symbols-outlined">straighten</span>
+                Precision Measurements & Body Profile
+              </h3>
+              <p className="font-body-md text-body-md text-on-surface-variant mt-1">
+                Accurate measurements ensure perfect fit recommendations across brands.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                to="/body-profile"
+                className="bg-primary/10 hover:bg-primary/20 text-primary font-button text-button px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>accessibility_new</span>
+                Manage Photos & VTO
+              </Link>
+              <button 
+                onClick={() => updateProfileMutation.mutate()} 
+                disabled={updateProfileMutation.isPending}
+                className="font-label-caps text-label-caps text-primary hover:text-secondary transition-colors uppercase tracking-widest disabled:opacity-50"
+              >
+                {updateProfileMutation.isPending ? 'Updating...' : 'Update'}
+              </button>
+            </div>
           </div>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-6">Accurate measurements ensure perfect fit recommendations across brands.</p>
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <div className="border-b border-outline-variant pb-2 focus-within:border-primary transition-colors">
               <label className="font-label-caps text-label-caps text-on-surface-variant block mb-1">Height (cm)</label>

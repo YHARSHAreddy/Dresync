@@ -29,5 +29,17 @@ export const bodyProfileApi = {
   updateProfile: async (data: BodyProfile): Promise<BodyProfile> => {
     const res = await api.put('/body-profile/me', data);
     return res.data;
+  },
+
+  uploadPhoto: async (file: File, photoType: 'front' | 'side' = 'front'): Promise<BodyProfile> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await api.post(`/body-profile/me/photo?photo_type=${photoType}`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return res.data;
   }
 };
+

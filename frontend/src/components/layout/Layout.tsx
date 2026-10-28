@@ -43,6 +43,10 @@ export function Layout() {
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>calendar_month</span>
             Planner
           </NavLink>
+          <NavLink to="/body-profile" className={({ isActive }) => `flex items-center gap-4 p-3 transition-colors font-label-caps text-label-caps rounded-lg ${isActive ? 'bg-secondary-container/10 text-primary translate-x-1 transition-transform' : 'text-on-surface-variant hover:bg-secondary-container/5'}`}>
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>accessibility_new</span>
+            Body Profile
+          </NavLink>
           <NavLink to="/outfits/generate" className={({ isActive }) => `flex items-center gap-4 p-3 transition-colors font-label-caps text-label-caps rounded-lg ${isActive ? 'bg-secondary-container/10 text-primary translate-x-1 transition-transform' : 'text-on-surface-variant hover:bg-secondary-container/5'}`}>
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 0" }}>auto_awesome</span>
             Recommendations
