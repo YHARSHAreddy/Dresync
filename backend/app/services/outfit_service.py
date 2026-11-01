@@ -4,7 +4,8 @@ import uuid
 from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from app.models.outfit import Outfit, OutfitHistory
-from app.models.clothing import ClothingItem
+from app.models.clothing import ClothingItem, ClothingCategory
+from app.core.clothing_categories import get_effective_category
 from app.schemas.outfit import OutfitGenerateRequest, HistoryCreate
 from app.ai.rule_based import recommend_outfits
 
@@ -48,8 +49,8 @@ def generate_outfits(
             detail="Your wardrobe is empty. Add clothing items first.",
         )
 
-    tops    = [i for i in items if i.category.value == "top"]
-    bottoms = [i for i in items if i.category.value == "bottom"]
+    tops    = [i for i in items if get_effective_category(i) == ClothingCategory.top]
+    bottoms = [i for i in items if get_effective_category(i) == ClothingCategory.bottom]
 
     if not tops or not bottoms:
         raise HTTPException(
@@ -74,8 +75,13 @@ def generate_outfits(
     # Persist each generated outfit
     saved: List[Outfit] = []
     for rec in recommendations:
+        top_name = rec["top"].name if rec.get("top") else "Top"
+        bottom_name = rec["bottom"].name if rec.get("bottom") else "Bottom"
+        outfit_name = rec.get("name") or f"{top_name} & {bottom_name}"
+
         outfit = Outfit(
             user_id=user_id_str,
+            name=outfit_name,
             top_id=rec["top"].id if rec["top"] else None,
             bottom_id=rec["bottom"].id if rec["bottom"] else None,
             outerwear_id=rec["outerwear"].id if rec["outerwear"] else None,

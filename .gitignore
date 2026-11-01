@@ -40,3 +40,5 @@ Thumbs.db
 
 backend/dresync.db
 backend/*.db
+cesium_man_tex.png
+

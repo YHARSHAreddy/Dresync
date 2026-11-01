@@ -56,8 +56,25 @@ export interface ClothingItemCreate {
   seasons?: string[];
   occasions?: string[];
   notes?: string;
+  image_url?: string;
   usage_status?: UsageStatus;
 }
+
+export interface ClothingAnalysisResult {
+  name: string;
+  category: ClothingCategory;
+  subcategory?: string;
+  primary_color: string;
+  color_name?: string;
+  secondary_colors: string[];
+  pattern: ClothingPattern;
+  styles: string[];
+  seasons: string[];
+  occasions: string[];
+  notes?: string;
+  image_url: string;
+}
+
 
 // ── Outfit ────────────────────────────────────────────────
 

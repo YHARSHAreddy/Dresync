@@ -58,6 +58,7 @@ export function PlannerPage() {
   const [season, setSeason] = useState('');
   const [generating, setGenerating] = useState(false);
   const [regeneratingDay, setRegeneratingDay] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const { data: plan, isLoading } = useQuery({
@@ -67,11 +68,12 @@ export function PlannerPage() {
 
   const handleGenerate = async () => {
     setGenerating(true);
+    setError(null);
     try {
       const newPlan = await plannerApi.generate({ occasion: occasion || undefined, season: season || undefined });
       qc.setQueryData(['weekly-plan'], newPlan);
     } catch (err: any) {
-      alert(err?.response?.data?.detail || 'Could not generate weekly plan');
+      setError(err?.response?.data?.detail || 'Could not generate weekly plan');
     } finally {
       setGenerating(false);
     }
@@ -79,11 +81,12 @@ export function PlannerPage() {
 
   const handleRegenerateDay = async (day: string) => {
     setRegeneratingDay(day);
+    setError(null);
     try {
       const updated = await plannerApi.regenerateDay(day, { occasion: occasion || undefined, season: season || undefined });
       qc.setQueryData(['weekly-plan'], updated);
     } catch (err: any) {
-      alert(err?.response?.data?.detail || 'Could not regenerate day');
+      setError(err?.response?.data?.detail || 'Could not regenerate day');
     } finally {
       setRegeneratingDay(null);
     }
@@ -94,6 +97,18 @@ export function PlannerPage() {
 
   return (
     <div className="max-w-[1200px] mx-auto space-y-12">
+      {error && (
+        <div className="bg-error/10 text-error border border-error/20 p-4 rounded-xl flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="text-error hover:opacity-70">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-outline-variant pb-8">
         <div>
           <h1 className="font-display-lg text-display-lg-mobile text-primary tracking-tight mb-2">Weekly Planner</h1>

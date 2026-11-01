@@ -1,11 +1,12 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, UploadFile, File, Query
+from fastapi import APIRouter, Depends, UploadFile, File, Query, HTTPException
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.api.v1.deps import get_current_user
 from app.models.user import User
-from app.schemas.clothing import ClothingItemCreate, ClothingItemUpdate, ClothingItemOut, WardrobeStats
-from app.services import wardrobe_service
+from app.schemas.clothing import ClothingItemCreate, ClothingItemUpdate, ClothingItemOut, WardrobeStats, ClothingAnalysisResult
+from app.services import wardrobe_service, clothing_analyzer
+from app.core.config import settings
 
 router = APIRouter(prefix="/wardrobe", tags=["Wardrobe"])
 
@@ -75,3 +76,29 @@ def upload_image(
     current_user: User = Depends(get_current_user),
 ):
     return wardrobe_service.upload_image(db, item_id, current_user.id, file)
+
+
+@router.post("/analyze-image", response_model=ClothingAnalysisResult)
+def analyze_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    if file.content_type not in settings.ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type not allowed. Use: {', '.join(settings.ALLOWED_IMAGE_TYPES)}",
+        )
+
+    file_bytes = file.file.read()
+    if len(file_bytes) > settings.MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File too large. Max size: {settings.MAX_FILE_SIZE // (1024*1024)} MB",
+        )
+
+    return clothing_analyzer.analyze_clothing_image(
+        file_bytes=file_bytes,
+        filename=file.filename or "clothing.jpg",
+        user_id=str(current_user.id),
+    )
+

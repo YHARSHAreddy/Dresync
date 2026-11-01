@@ -1,5 +1,5 @@
 import api from './client';
-import { ClothingItem, ClothingItemCreate, WardrobeStats } from '../types';
+import { ClothingItem, ClothingItemCreate, WardrobeStats, ClothingAnalysisResult } from '../types';
 
 export const wardrobeApi = {
   getStats: async (): Promise<WardrobeStats> => {
@@ -29,6 +29,14 @@ export const wardrobeApi = {
     const form = new FormData();
     form.append('file', file);
     const res = await api.post(`/wardrobe/items/${id}/image`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+  analyzeImage: async (file: File): Promise<ClothingAnalysisResult> => {
+    const form = new FormData();
+    form.append('file', file);
+    const res = await api.post('/wardrobe/analyze-image', form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
     return res.data;

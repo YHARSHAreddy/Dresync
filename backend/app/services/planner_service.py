@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session, joinedload
 from fastapi import HTTPException
 from app.models.planner import WeeklyPlan
 from app.models.outfit import Outfit, OutfitHistory
-from app.models.clothing import ClothingItem
+from app.models.clothing import ClothingItem, ClothingCategory
+from app.core.clothing_categories import get_effective_category
 from app.ai.rule_based import recommend_outfits
 from app.schemas.planner import PlannerGenerateRequest
 
@@ -81,12 +82,17 @@ def _eager_load_plan(db: Session, plan: WeeklyPlan) -> WeeklyPlan:
 import json
 
 def _save_outfit(db: Session, user_id: str, rec: dict) -> Outfit:
+    top_name = rec["top"].name if rec.get("top") else "Top"
+    bottom_name = rec["bottom"].name if rec.get("bottom") else "Bottom"
+    outfit_name = rec.get("name") or f"{top_name} & {bottom_name}"
+
     outfit = Outfit(
         user_id=str(user_id),
-        top_id=rec["top"].id if rec["top"] else None,
-        bottom_id=rec["bottom"].id if rec["bottom"] else None,
-        outerwear_id=rec["outerwear"].id if rec["outerwear"] else None,
-        shoes_id=rec["shoes"].id if rec["shoes"] else None,
+        name=outfit_name,
+        top_id=rec["top"].id if rec.get("top") else None,
+        bottom_id=rec["bottom"].id if rec.get("bottom") else None,
+        outerwear_id=rec["outerwear"].id if rec.get("outerwear") else None,
+        shoes_id=rec["shoes"].id if rec.get("shoes") else None,
         accessory_ids=json.dumps([str(a.id) for a in rec.get("accessories", [])]),
         compatibility_score=rec["score"],
         recommendation_reasons=json.dumps(rec["reasons"]),
@@ -122,8 +128,8 @@ def generate_weekly_plan(
         .all()
     )
 
-    tops    = [i for i in items if i.category.value == "top"]
-    bottoms = [i for i in items if i.category.value == "bottom"]
+    tops    = [i for i in items if get_effective_category(i) == ClothingCategory.top]
+    bottoms = [i for i in items if get_effective_category(i) == ClothingCategory.bottom]
 
     if not tops and not bottoms:
         raise HTTPException(
@@ -138,7 +144,7 @@ def generate_weekly_plan(
     elif not bottoms:
         raise HTTPException(
             status_code=400,
-            detail="Add at least one bottom to generate a weekly plan.",
+            detail="Add at least one bottom (e.g. jeans, trousers, chinos, shorts) to generate a weekly plan.",
         )
 
     # Get all potential outfits (without dedup) to know our baseline pool

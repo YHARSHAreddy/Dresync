@@ -77,14 +77,15 @@ def recommend_outfits(
             "breakdown": {...},
         }
     """
-    exclude_outfit_item_sets = exclude_outfit_item_sets or []
+    from app.core.clothing_categories import get_effective_category
+    from app.models.clothing import ClothingCategory
 
-    # Split by category
-    tops       = [i for i in clothing_items if i.category.value == "top"       and i.usage_status.value == "active"]
-    bottoms    = [i for i in clothing_items if i.category.value == "bottom"    and i.usage_status.value == "active"]
-    shoes_list = [i for i in clothing_items if i.category.value == "shoes"     and i.usage_status.value == "active"]
-    outerwear  = [i for i in clothing_items if i.category.value == "outerwear" and i.usage_status.value == "active"]
-    accessories = [i for i in clothing_items if i.category.value == "accessory" and i.usage_status.value == "active"]
+    # Split by category using intelligent keyword & category resolver
+    tops        = [i for i in clothing_items if get_effective_category(i) == ClothingCategory.top and i.usage_status.value == "active"]
+    bottoms     = [i for i in clothing_items if get_effective_category(i) == ClothingCategory.bottom and i.usage_status.value == "active"]
+    shoes_list  = [i for i in clothing_items if get_effective_category(i) == ClothingCategory.shoes and i.usage_status.value == "active"]
+    outerwear   = [i for i in clothing_items if get_effective_category(i) == ClothingCategory.outerwear and i.usage_status.value == "active"]
+    accessories = [i for i in clothing_items if get_effective_category(i) == ClothingCategory.accessory and i.usage_status.value == "active"]
 
     # Apply filters (relaxed: if filtered list is empty, fall back to unfiltered)
     def filtered(lst):

@@ -103,7 +103,7 @@ export function DashboardPage() {
             Interactive Stylist
           </h2>
         </div>
-        <div className="h-[500px]">
+        <div className="h-[580px]">
           <MannequinViewer outfit={todaysOutfit} />
         </div>
       </section>

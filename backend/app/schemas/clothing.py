@@ -17,7 +17,23 @@ class ClothingItemCreate(BaseModel):
     seasons: List[str] = []
     occasions: List[str] = []
     notes: Optional[str] = None
+    image_url: Optional[str] = None
     usage_status: UsageStatus = UsageStatus.active
+
+
+class ClothingAnalysisResult(BaseModel):
+    name: str
+    category: ClothingCategory
+    subcategory: Optional[str] = None
+    primary_color: str
+    color_name: Optional[str] = None
+    secondary_colors: List[str] = []
+    pattern: ClothingPattern
+    styles: List[str] = []
+    seasons: List[str] = []
+    occasions: List[str] = []
+    notes: Optional[str] = None
+    image_url: str
 
 
 class ClothingItemUpdate(BaseModel):
@@ -28,6 +44,7 @@ class ClothingItemUpdate(BaseModel):
     secondary_colors: Optional[List[str]] = None
     pattern: Optional[ClothingPattern] = None
     styles: Optional[List[str]] = None
+    image_url: Optional[str] = None
     seasons: Optional[List[str]] = None
     occasions: Optional[List[str]] = None
     notes: Optional[str] = None

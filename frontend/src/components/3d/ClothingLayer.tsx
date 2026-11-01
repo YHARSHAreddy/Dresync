@@ -1,75 +1,181 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Texture, TextureLoader, RepeatWrapping, SRGBColorSpace } from 'three';
 import { Outfit } from '../../types';
 
 interface ClothingLayerProps {
   outfit?: Outfit | null;
 }
 
+/**
+ * Safely loads a garment texture without crashing the Canvas if the image is missing or loading.
+ */
+function useGarmentTexture(imageUrl?: string): Texture | null {
+  const [texture, setTexture] = useState<Texture | null>(null);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setTexture(null);
+      return;
+    }
+
+    let isMounted = true;
+    const loader = new TextureLoader();
+
+    // Support both relative /uploads/... and full URLs
+    const src = imageUrl.startsWith('http') || imageUrl.startsWith('blob:') || imageUrl.startsWith('data:')
+      ? imageUrl
+      : imageUrl;
+
+    loader.load(
+      src,
+      (loaded) => {
+        if (!isMounted) return;
+        loaded.wrapS = RepeatWrapping;
+        loaded.wrapT = RepeatWrapping;
+        loaded.colorSpace = SRGBColorSpace;
+        loaded.repeat.set(1.5, 1.5);
+        setTexture(loaded);
+      },
+      undefined,
+      (err) => {
+        console.warn('Garment texture failed to load, falling back to primary color:', imageUrl, err);
+        if (isMounted) setTexture(null);
+      }
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, [imageUrl]);
+
+  return texture;
+}
+
+/**
+ * Snug, well-fitted 3D clothing overlay calibrated directly to the athletic male mannequin.
+ * Dynamically maps the real fabric photo/texture from the uploaded wardrobe piece onto the 3D meshes.
+ */
 export function ClothingLayer({ outfit }: ClothingLayerProps) {
   if (!outfit) return null;
 
-  // Since we don't have actual 3D files for every piece of clothing yet,
-  // we use dynamic geometry colored with the item's primary color to represent VTO.
-  // When real .glb files are available, this component can use useGLTF to load them instead.
+  const topColor = outfit.top?.primary_color || '#2d3748';
+  const bottomColor = outfit.bottom?.primary_color || '#1a202c';
+  const shoesColor = outfit.shoes?.primary_color || '#ffffff';
+
+  const topTexture = useGarmentTexture(outfit.top?.image_url);
+  const bottomTexture = useGarmentTexture(outfit.bottom?.image_url);
+  const shoesTexture = useGarmentTexture(outfit.shoes?.image_url);
 
   return (
     <group>
-      {/* Render Top */}
+      {/* ================= TOP (Shirt / Jacket) ================= */}
       {outfit.top && (
-        <group position={[0, 1.35, 0]}>
-          <mesh>
-            {/* A cylinder that acts like a shirt around the torso */}
-            <cylinderGeometry args={[0.26, 0.22, 0.65, 32]} />
-            <meshStandardMaterial 
-              color={outfit.top.primary_color || '#333333'} 
-              roughness={0.8}
-              transparent
-              opacity={0.95} 
+        <group>
+          {/* Main Torso Shirt Body - wraps chest and upper abs cleanly */}
+          <mesh position={[0, 1.32, 0.005]}>
+            <cylinderGeometry args={[0.245, 0.185, 0.44, 32]} />
+            <meshStandardMaterial
+              color={topTexture ? '#ffffff' : topColor}
+              map={topTexture || undefined}
+              roughness={0.78}
+              metalness={0.06}
             />
           </mesh>
-          {/* Sleeves */}
-          <mesh position={[-0.3, 0.15, 0]} rotation={[0, 0, -0.3]}>
-            <cylinderGeometry args={[0.08, 0.07, 0.3, 16]} />
-            <meshStandardMaterial color={outfit.top.primary_color || '#333333'} />
+
+          {/* Left Sleeve (Shoulder to Upper Arm) */}
+          <mesh position={[-0.26, 1.34, 0]} rotation={[0, 0, 0.1]}>
+            <cylinderGeometry args={[0.088, 0.076, 0.22, 24]} />
+            <meshStandardMaterial
+              color={topTexture ? '#ffffff' : topColor}
+              map={topTexture || undefined}
+              roughness={0.78}
+              metalness={0.06}
+            />
           </mesh>
-          <mesh position={[0.3, 0.15, 0]} rotation={[0, 0, 0.3]}>
-            <cylinderGeometry args={[0.08, 0.07, 0.3, 16]} />
-            <meshStandardMaterial color={outfit.top.primary_color || '#333333'} />
+
+          {/* Right Sleeve (Shoulder to Upper Arm) */}
+          <mesh position={[0.26, 1.34, 0]} rotation={[0, 0, -0.1]}>
+            <cylinderGeometry args={[0.088, 0.076, 0.22, 24]} />
+            <meshStandardMaterial
+              color={topTexture ? '#ffffff' : topColor}
+              map={topTexture || undefined}
+              roughness={0.78}
+              metalness={0.06}
+            />
+          </mesh>
+
+          {/* Collar Accent */}
+          <mesh position={[0, 1.545, 0.015]} rotation={[0.08, 0, 0]}>
+            <torusGeometry args={[0.085, 0.014, 16, 32]} />
+            <meshStandardMaterial
+              color={topColor}
+              roughness={0.8}
+            />
           </mesh>
         </group>
       )}
 
-      {/* Render Bottom (Pants) */}
+      {/* ================= BOTTOM (Pants / Trousers) ================= */}
       {outfit.bottom && (
-        <group position={[0, 0.45, 0]}>
-          {/* Left leg */}
-          <mesh position={[-0.12, 0, 0]}>
-            <cylinderGeometry args={[0.08, 0.07, 0.9, 16]} />
-            <meshStandardMaterial color={outfit.bottom.primary_color || '#1a365d'} />
+        <group>
+          {/* Waistband / Pelvis */}
+          <mesh position={[0, 0.95, 0]}>
+            <cylinderGeometry args={[0.188, 0.178, 0.18, 32]} />
+            <meshStandardMaterial
+              color={bottomTexture ? '#ffffff' : bottomColor}
+              map={bottomTexture || undefined}
+              roughness={0.85}
+              metalness={0.05}
+            />
           </mesh>
-          {/* Right leg */}
-          <mesh position={[0.12, 0, 0]}>
-            <cylinderGeometry args={[0.08, 0.07, 0.9, 16]} />
-            <meshStandardMaterial color={outfit.bottom.primary_color || '#1a365d'} />
+
+          {/* Left Pant Leg (Thigh through Ankle) */}
+          <mesh position={[-0.105, 0.48, 0]}>
+            <cylinderGeometry args={[0.108, 0.072, 0.84, 24]} />
+            <meshStandardMaterial
+              color={bottomTexture ? '#ffffff' : bottomColor}
+              map={bottomTexture || undefined}
+              roughness={0.85}
+              metalness={0.05}
+            />
           </mesh>
-          {/* Waist / Pelvis area */}
-          <mesh position={[0, 0.5, 0]}>
-            <boxGeometry args={[0.35, 0.2, 0.2]} />
-            <meshStandardMaterial color={outfit.bottom.primary_color || '#1a365d'} />
+
+          {/* Right Pant Leg (Thigh through Ankle) */}
+          <mesh position={[0.105, 0.48, 0]}>
+            <cylinderGeometry args={[0.108, 0.072, 0.84, 24]} />
+            <meshStandardMaterial
+              color={bottomTexture ? '#ffffff' : bottomColor}
+              map={bottomTexture || undefined}
+              roughness={0.85}
+              metalness={0.05}
+            />
           </mesh>
         </group>
       )}
 
-      {/* Render Shoes */}
+      {/* ================= SHOES ================= */}
       {outfit.shoes && (
-        <group position={[0, -0.05, 0]}>
-          <mesh position={[-0.12, 0, 0.05]}>
-            <boxGeometry args={[0.1, 0.1, 0.25]} />
-            <meshStandardMaterial color={outfit.shoes.primary_color || '#ffffff'} />
+        <group>
+          {/* Left Shoe */}
+          <mesh position={[-0.105, 0.045, 0.04]} scale={[1, 0.72, 1.7]}>
+            <boxGeometry args={[0.105, 0.082, 0.165]} />
+            <meshStandardMaterial
+              color={shoesTexture ? '#ffffff' : shoesColor}
+              map={shoesTexture || undefined}
+              roughness={0.4}
+              metalness={0.12}
+            />
           </mesh>
-          <mesh position={[0.12, 0, 0.05]}>
-            <boxGeometry args={[0.1, 0.1, 0.25]} />
-            <meshStandardMaterial color={outfit.shoes.primary_color || '#ffffff'} />
+
+          {/* Right Shoe */}
+          <mesh position={[0.105, 0.045, 0.04]} scale={[1, 0.72, 1.7]}>
+            <boxGeometry args={[0.105, 0.082, 0.165]} />
+            <meshStandardMaterial
+              color={shoesTexture ? '#ffffff' : shoesColor}
+              map={shoesTexture || undefined}
+              roughness={0.4}
+              metalness={0.12}
+            />
           </mesh>
         </group>
       )}
