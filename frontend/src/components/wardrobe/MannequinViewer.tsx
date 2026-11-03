@@ -20,22 +20,22 @@ export function MannequinViewer({ outfit }: MannequinViewerProps) {
         Interactive Stylist Model
       </div>
 
-      <Canvas camera={{ position: [0, 1.05, 3.2], fov: 42 }} shadows>
+      <Canvas camera={{ position: [0, 0.0, 2.7], fov: 42 }} shadows>
         {/* Studio Lighting */}
-        <ambientLight intensity={0.45} />
-        <hemisphereLight intensity={0.35} color="#ffffff" groundColor="#333333" />
+        <ambientLight intensity={0.5} />
+        <hemisphereLight intensity={0.4} color="#ffffff" groundColor="#333333" />
         {/* Key Light */}
         <directionalLight
           position={[4, 8, 4]}
-          intensity={1.3}
+          intensity={1.4}
           castShadow
           shadow-mapSize-width={1024}
           shadow-mapSize-height={1024}
         />
         {/* Fill Light */}
-        <directionalLight position={[-4, 4, -3]} intensity={0.55} />
+        <directionalLight position={[-4, 4, -3]} intensity={0.6} />
         {/* Muscular Definition Rim Light */}
-        <pointLight position={[0, 1.8, -2.8]} intensity={1.8} color="#cce4ff" />
+        <pointLight position={[0, 1.2, -2.5]} intensity={1.5} color="#cce4ff" />
 
         <Suspense fallback={null}>
           <HumanModel profile={profile} outfit={outfit} />
@@ -44,7 +44,7 @@ export function MannequinViewer({ outfit }: MannequinViewerProps) {
         <Environment preset="studio" />
 
         <ContactShadows
-          position={[0, -0.96, 0]}
+          position={[0, -0.99, 0]}
           opacity={0.65}
           scale={5}
           blur={1.6}
@@ -52,6 +52,7 @@ export function MannequinViewer({ outfit }: MannequinViewerProps) {
         />
 
         <OrbitControls
+          target={[0, 0.0, 0]}
           enablePan={false}
           enableZoom={true}
           enableDamping={true}
